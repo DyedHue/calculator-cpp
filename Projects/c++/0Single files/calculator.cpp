@@ -6,6 +6,46 @@ using namespace std;
 //-------------------
 bool useRadian = true;
 //-------------------
+class number
+{
+public:
+    double re = 0, im = 0;
+
+    number() = default;
+    number(double Re, double Im) : re(Re), im(Im) {}
+
+    number operator+(const number& other) const
+    {
+        return {re + other.re, im + other.im};
+    }
+    number operator-(const number& other) const
+    {
+        return {re - other.re, im - other.im};
+    }
+    number operator*(const number& other) const
+    {
+        return {re * other.re - im * other.im, re * other.im + im * other.re};
+    }
+    number operator/(const number& other) const
+    {
+        double denom = other.re * other.re + other.im * other.im;
+        double real = (re * other.re + im * other.im)/denom;
+        double imag = (-re * other.im + im * other.re)/denom;
+        return {real, imag};
+    }
+};
+number complexPower(number base, number power)
+{
+    double r1 = sqrt(base.re*base.re + base.im * base.im);
+    double r2 = sqrt(power.re*power.re + power.im * power.im);
+    double theta1 = atan2(base.im, base.re);
+    double theta2 = atan2(power.im, power.re);
+    
+    double newr = exp(r2*(log(r1) * cos(theta2) - theta1 * sin(theta2)));
+    double newtheta = r2 * (log(r1) * sin(theta2) + theta1 * cos(theta2));
+
+    return {newr*cos(newtheta), newr*sin(newtheta)};
+}
 double toradian(double n)
 {
     if(useRadian) return n;
@@ -15,7 +55,11 @@ bool isInteger(double n)
 {
     return abs(n - round(n)) <= 1e-9;
 }
-bool startsWith(string s, string pref)
+bool isEqual(double a, double b)
+{
+    return abs(a-b) <= 1e-9;
+}
+bool startsWith(const string& s, const string& pref)
 {
     return s.compare(0, pref.size(), pref) == 0;
 }
@@ -24,22 +68,9 @@ double strict_stod(const string& s)
     size_t endPos = 0;
     double val = stod(s, &endPos);
 
-    if (endPos < s.size()) {
+    if (endPos < s.size())
         throw invalid_argument("");
-    }
     return val;
-}
-
-string plug_value(string func, double X)
-{
-    string x = to_string(X);
-    int xpos;
-    while((xpos = func.find('x', xpos)) != string::npos)
-    {
-        func.replace(xpos, 1, x);
-        xpos += x.size();
-    }
-    return func;
 }
 long long factorial(int n)
 {
@@ -49,9 +80,9 @@ long long factorial(int n)
         ans*=i;
     return ans;
 }
-double evaluate(string s, double xValue = 0)
+number evaluate(string s, double xValue = 0)
 {
-    double num;
+    number num;
     int plusminusPos = -1, multidivPos = -1, expPos = -1, comPermPos = -1;
     int parenthDepth = 0;
     for(int i = s.size() - 1; i >= 0; i--)
@@ -80,13 +111,29 @@ double evaluate(string s, double xValue = 0)
         if(s[multidivPos] == '*') return evaluate(s.substr(0, multidivPos), xValue) * evaluate(s.substr(multidivPos + 1), xValue);
         else                      return evaluate(s.substr(0, multidivPos), xValue) / evaluate(s.substr(multidivPos + 1), xValue);
     else if(expPos != -1)
-        return pow(evaluate(s.substr(0, expPos), xValue), evaluate(s.substr(expPos + 1), xValue));
+    {
+        number base = evaluate(s.substr(0, expPos), xValue);
+        number power = evaluate(s.substr(expPos + 1), xValue);
+
+        if(!isEqual(base.im,0) || !(power.im, 0) || (base.re < 0 && !isInteger(power.re)))
+            return complexPower(base, power);
+        
+        return {pow(base.re, power.re), 0};
+    }
+        
     else if(comPermPos != -1)
     {
         string operation = ((s[comPermPos] == 'c')? "combination" : "permutation");
 
-        double n = evaluate(s.substr(0, comPermPos), xValue);
-        double r = evaluate(s.substr(comPermPos + 1), xValue);
+        number nn = evaluate(s.substr(0, comPermPos), xValue);
+        number nr = evaluate(s.substr(comPermPos + 1), xValue);
+        if(!isEqual(nn.im, 0) || !isEqual(nr.im, 0))
+        {
+            throw runtime_error("Error: " + operation + " is not supported for complex numbers");
+        }
+        double n = nn.re;
+        double r = nr.re;
+
         if(n < 0 || r < 0)
             throw runtime_error("Error: "+ operation +" for negative numbers is not supported");
         else if(!isInteger(n) || !isInteger(r))
@@ -95,27 +142,31 @@ double evaluate(string s, double xValue = 0)
             throw runtime_error("Error: n < r while calculating " + operation);
         else
         {
-            if(s[comPermPos] == 'c') return factorial(n)/(factorial(r) * factorial(n - r));
-            else                     return factorial(n)/factorial(n-r);
+            if(s[comPermPos] == 'c') return {factorial(n)/(factorial(r) * factorial(n - r)), 0};
+            else                     return {factorial(n)/factorial(n-r), 0};
         }
     }
 
     else if(s[s.size() -1] == '!')
     {
         num = evaluate(s.substr(0, s.size() - 1), xValue);
-        if(num < 0)
+        if(!isEqual(num.im, 0))
+            throw runtime_error("Error: factorial is not supported for complex numbers");
+        
+        double rnum = num.re;
+        if(rnum < 0)
             throw runtime_error("Error: Factorial for negative numbers is not supported");
-        else if(!isInteger(num))
+        else if(!isInteger(rnum))
             throw runtime_error("Error: Factorial for fractions is not supported");
-        else if(num > 20)
+        else if(rnum > 20)
             throw runtime_error("Error: Factorial for numbers over 20 is too large");
-        else return factorial(num);
+        else return {factorial(rnum), 0};
     }
     else if(s[s.size() -1] == '%')
-        return evaluate(s.substr(0, s.size() - 1), xValue)/100.0;
+        return evaluate(s.substr(0, s.size() - 1), xValue)/number(100.0, 0);
     else
     {
-        if(s[0] == '-') return -evaluate(s.substr(1), xValue);
+        if(s[0] == '-') return number(-1, 0) * evaluate(s.substr(1), xValue);
         
         int pos = -1;
         if(s.size() > 1)
@@ -149,82 +200,108 @@ double evaluate(string s, double xValue = 0)
                 if(comma2Pos == string::npos)
                     throw runtime_error("Syntax error! Use integration like this: int(lower_limit, upper_limit, function_of_x)");
                 
-                double low = evaluate(s.substr(4, comma1Pos - 4), xValue);
-                double high = evaluate(s.substr(comma1Pos + 1, comma2Pos - (comma1Pos + 1)), xValue);
+                number nlow = evaluate(s.substr(4, comma1Pos - 4), xValue);
+                number nhigh = evaluate(s.substr(comma1Pos + 1, comma2Pos - (comma1Pos + 1)), xValue);
+                double low = nlow.re, high = nhigh.re;
                 string xfunc = s.substr(comma2Pos + 1, s.size() -1 - (comma2Pos + 1));
-                int sliceNumber = 1e6;
 
+                if(!isEqual(nlow.im, 0) || !isEqual(nhigh.im, 0)) throw runtime_error("Error: You can't use complex numbers for bounds in integration");
+                int sliceNumber = 1e6;
                 double stepAmount = (high - low)/sliceNumber;
 
                 double ans = 0;
                 double x = low;
                 for(int i = 1; i < sliceNumber; i++)
                 {
-                    // ans += evaluate(plug_value(xfunc, x));
-                    ans += evaluate(xfunc, x);
+                    ans += evaluate(xfunc, x).re;
                     x += stepAmount;
                 }
                 ans*=stepAmount;
-                return ans;
+                return {ans, 0};
             }
 
             num = evaluate(s.substr(pos + 1, s.size() - (pos + 1) - 1), xValue);
-    
-            if(funcName == "sin")
-                return sin(toradian(num));
-            if(funcName == "cos")
-                return cos(toradian(num));
-            if(funcName == "tan")
-                return tan(toradian(num));
-            if(funcName == "asin")
-                return asin(toradian(num));
-            if(funcName == "acos")
-                return acos(toradian(num));
-            if(funcName == "atan")
-                return atan(toradian(num));
+            bool real = isEqual(num.im, 0);
+
             if(funcName == "log")
-                return log10(num);
+            {
+                return {log10(num.re), 0};
+            }
             if(funcName == "ln")
-                return log(num);
+            {
+                return {log(num.re), 0};
+            }
             if(funcName == "sqrt")
-                return sqrt(num);
+            {
+                if(real && num.re >= 0) return {sqrt(num.re), 0};
+                else return complexPower(num, {0.5, 0});
+            }
             if(funcName.size() >= 4 && startsWith(funcName, "log_"))
             {
-                double base = evaluate(funcName.substr(4), xValue);
-                return log(num)/log(base);
+                double base = evaluate(funcName.substr(4), xValue).re;
+                return {log(num.re)/log(base), 0};
             }
             if(funcName.size() >= 2 && startsWith(funcName, "rt_"))
             {
-                double n = evaluate(funcName.substr(3), xValue);
-                return pow(num, 1/n);
+                number n = evaluate(funcName.substr(3), xValue);
+                number power = number(1, 0)/n;
+
+                if(!real || !isEqual(power.im, 0) || (num.re < 0 && !isInteger(power.re)))
+                    return complexPower(num, power);
+                
+                return {pow(num.re, 1/n.re), 0};
             }
+
+            if(!real)
+            {
+                if(funcName != "")
+                    throw runtime_error(funcName + "function does not support complex numbers");
+                else return num;
+            }
+                
+            if(funcName == "sin")
+                return {sin(toradian(num.re)), 0};
+            if(funcName == "cos")
+                return {cos(toradian(num.re)), 0};
+            if(funcName == "tan")
+                return {tan(toradian(num.re)), 0};
+            if(funcName == "asin")
+                return {asin(toradian(num.re)), 0};
+            if(funcName == "acos")
+                return {acos(toradian(num.re)), 0};
+            if(funcName == "atan")
+                return {atan(toradian(num.re)), 0};
             if(funcName != "")
                 throw runtime_error("Error: \"" + funcName + "\" is not an available function");
             
             return num;
         }
         
-        if(s[0] != 'x')
+        if(s[0] == 'x')
+        {
+            return {xValue, 0};
+        }
+        else if(s[0] == 'i')
+        {
+            return {0, 1};
+        }
+        else
         {
             try
             {
-                return strict_stod(s);
+                return {strict_stod(s), 0};
             }
             catch(invalid_argument& e)
             {
                 throw runtime_error("Syntax error!");
             }
         }
-        else
-        {
-            return xValue;
-        }
     }
 }
 int main()
 {
-    // cout << "Calculator started! Enter 'm' for manual.\n\n";
-    // while(1)
+    cout << "Calculator started! Enter 'm' for manual.\n\n";
+    while(1)
     {
         string ss, s ="";
         getline(cin, ss);
@@ -233,12 +310,31 @@ int main()
                 s+=ss[i];
         if(s == "m")
         {
-            cout <<"Write an expression like (3.2 - 5^2 + 45.34)/(8*6) and press Enter to get the result (spaces are ignored)\n\nSupported operations:\n    Addition       +\n    Subtraction    -\n    Multiplication *\n    Division       /\n    Exponent       ^\n    Factorial      !\n    Percentage     %\n    Permutation    p\n    Combination    c\n\nSupported functions: (Always use parentheses around the value)\n    sin(x)\n    cos(x)\n    tan(x)\n    ln(x)\n    log(x)    10 based log\n    log_b(x)  b based log of x\n    sqrt(x)   square root\n    rt_n(x)   nth root of x\n\nYou can also write in scientific notation (e.g., 4e6 will be considered 4000000)\n\n";
-            // continue;
+            cout <<"Write an expression like (3.2 - 5^2 + 45.34)/(8*6) and press Enter to get the result (spaces are ignored)\n\nSupported operations:\n    Addition       +\n    Subtraction    -\n    Multiplication *\n    Division       /\n    Exponent       ^\n    Factorial      !\n    Percentage     %\n    Permutation    p\n    Combination    c\n\nSupported functions: (Always use parentheses around the value)\n    sin(x)\n    cos(x)\n    tan(x)\n    ln(x)\n    log(x)    10 based log\n    log_b(x)  b based log of x\n    sqrt(x)   square root\n    rt_n(x)   nth root of x\n\nComplex numbers are supported for +,  -,  *,  /,  ^ and sqrt(),  rt_n() currently. You can also write 'i' in the expression for sqrt(-1)\nYou can also write in scientific notation (e.g., 4e6 will be considered 4000000)\nCurrently, you need to write multiplication explicitly for everything such as 3*i,  (4+5)*(6-9) or 5*x\n\n";
+            continue;
         }
         try
         {
-            cout << "= " << evaluate(s) << "\n\n";
+            number ans = evaluate(s);
+            if(isEqual(ans.re, 0)) ans.re = 0;
+            if(isEqual(ans.im, 0)) ans.im = 0;
+            
+            cout << "= ";
+            if(ans.re != 0 && ans.im == 0)
+                cout << ans.re;
+            else if(ans.re == 0 && ans.im != 0)
+                if(isEqual(ans.im, 1)) cout << "i";
+                else cout << ans.im << "i";
+            else if(ans.re != 0 && ans.im != 0)
+            {
+                cout << ans.re << " + ";
+                if(!isEqual(ans.im, 1)) cout << ans.im;
+                cout << "i";
+            }
+            else if(ans.re == 0 && ans.im == 0)
+                cout << "0";
+            
+            cout << "\n\n";
         }
         catch(const std::exception& e)
         {
