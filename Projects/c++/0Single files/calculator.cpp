@@ -4,7 +4,7 @@
 using namespace std;
 
 //-------------------
-bool useRadian = false;
+bool useRadian = true;
 //-------------------
 class number
 {
@@ -121,7 +121,7 @@ number evaluate(string s, double xValue = 0)
         number base = evaluate(s.substr(0, expPos), xValue);
         number power = evaluate(s.substr(expPos + 1), xValue);
 
-        if(!isEqual(base.im,0) || !(power.im, 0) || (base.re < 0 && !isInteger(power.re)))
+        if(!isEqual(base.im,0) || !isEqual(power.im, 0) || (base.re < 0 && !isInteger(power.re)))
             return complexPower(base, power);
         
         return {pow(base.re, power.re), 0};
