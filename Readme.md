@@ -1,0 +1,40 @@
+Write an expression like (3.2 - 5^2 + 45.34)/(8*6) and press Enter to get the result (spaces are ignored)  
+  
+|Supported operations|sign|
+|-|-|
+|Addition|`+`|
+|Subtraction|`-`|
+|Multiplication|`*`|
+|Division|`/`|
+|Exponent|`^`|
+|Factorial|`!`|
+|Percentage|`%`|
+|Permutation|`p`|
+|Combination|`c`|  
+  
+|Supported functions|Additional Info|
+|-|-|
+|`sin(x)`|
+|`cos(x)`|
+|`tan(x)`|
+|`ln(x)`|
+|`log(x)`|10 based log|
+|`log_b(x)`|b based log of x|
+|`sqrt(x)`|square root|
+|`rt_n(x)`|nth root of x|
+|`\|x\|`|absolute value|
+|`int(l, h, f)`|[integrate w.r.t x](#integration-info)|
+
+>[!NOTE]
+><a id="integration-info"></a>
+>`int(l, h, f)`   integrate w.r.t x  
+> 
+>Here l is the lower bound, h is the upper bound and f is where you put your function of x like this:  
+>3*x + 2.4*x^2.(Don't add "dx" at the end)  
+   
+   
+- Complex numbers are supported for +,  -,  *,  /,  ^, ||, sqrt() and rt_n() currently. You can also write 'i' in the expression for sqrt(-1)  
+- You can also write in scientific notation (e.g., 4e6 will be considered 4000000)  
+- Currently, you need to write multiplication explicitly for everything such as 3*i, (4+5)*(6-9) or 5*x  
+- Roots don't guarantee the principal root for imaginary numbers  
+- There is currently no overflow checks  
