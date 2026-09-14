@@ -30,7 +30,7 @@ Write an expression like (3.2 - 5^2 + 45.34)/(8*6) and press Enter to get the re
 >`int(l, h, f)`   integrate w.r.t x  
 > 
 >Here l is the lower bound, h is the upper bound and f is where you put your function of x like this:  
->3*x + 2.4*x^2.(Don't add "dx" at the end)  
+>`3*x + 2.4*x^2` (Don't add "dx" at the end)  
    
    
 - Complex numbers are supported for +,  -,  *,  /,  ^, ||, sqrt() and rt_n() currently. You can also write 'i' in the expression for sqrt(-1)  
