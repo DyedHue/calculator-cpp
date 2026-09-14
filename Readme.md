@@ -17,6 +17,9 @@ Write an expression like (3.2 - 5^2 + 45.34)/(8*6) and press Enter to get the re
 |`sin(x)`|
 |`cos(x)`|
 |`tan(x)`|
+|`asin(x)`|arcsin|
+|`acos(x)`|arccros|
+|`atan(x)`|arctan|
 |`ln(x)`|
 |`log(x)`|10 based log|
 |`log_b(x)`|b based log of x|
@@ -36,5 +39,5 @@ Write an expression like (3.2 - 5^2 + 45.34)/(8*6) and press Enter to get the re
 - Complex numbers are supported for +,  -,  *,  /,  ^, ||, sqrt() and rt_n() currently. You can also write 'i' in the expression for sqrt(-1)  
 - You can also write in scientific notation (e.g., 4e6 will be considered 4000000)  
 - Currently, you need to write multiplication explicitly for everything such as 3*i, (4+5)*(6-9) or 5*x  
-- Roots don't guarantee the principal root for imaginary numbers  
+- Roots don't guarantee the principal root for imaginary numbers currently
 - There is currently no overflow checks  
